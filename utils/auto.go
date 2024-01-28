@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserClaims struct {
-	Identity string `json:"identity"`
-	Email    string `json:"email"`
+	// Identity string `json:"identity"`
+	Identity primitive.ObjectID `json:"identity"`
+	Email    string             `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -21,8 +23,12 @@ var myKey = []byte("websocket-chat")
 
 // GenerateToken
 func GenerateToken(identity, email string) (string, error) {
+	objectID, err := primitive.ObjectIDFromHex(identity)
+	if err != nil {
+		return "", err
+	}
 	UserClaim := &UserClaims{
-		Identity:         identity,
+		Identity:         objectID,
 		Email:            email,
 		RegisteredClaims: jwt.RegisteredClaims{},
 	}
@@ -34,7 +40,8 @@ func GenerateToken(identity, email string) (string, error) {
 	return tokenString, nil
 }
 
-// AnalyseToken
+// // AnalyseToken function is used to parse the token string.
+// It returns a UserClaims object and an error. If the parsing is successful, the error is nil, otherwise, the UserClaims object is nil.
 func AnalyseToken(tokenString string) (*UserClaims, error) {
 	userClaim := new(UserClaims)
 	claims, err := jwt.ParseWithClaims(tokenString, userClaim, func(token *jwt.Token) (interface{}, error) {

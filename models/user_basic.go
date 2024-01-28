@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserBasic struct {
@@ -18,6 +19,7 @@ type UserBasic struct {
 	UpdatedAt int64  `bson:"updated_at"`
 }
 
+// CollectionName returns the collection name of UserBasic objects in the database.
 func (ub UserBasic) CollectionName() string {
 	return "user_basic"
 }
@@ -37,6 +39,18 @@ func GetUserBasicByAccountPassWord(account, password string) (*UserBasic, error)
 			},
 		}).
 		Decode(ub)
+	return ub, err
+}
 
+func GetUserBasicByIdentity(identity primitive.ObjectID) (*UserBasic, error) {
+	ub := new(UserBasic)
+
+	err := Mongo.Collection(UserBasic{}.CollectionName()).
+		FindOne(context.Background(), bson.D{
+			{
+				Key: "_id", Value: identity,
+			},
+		}).
+		Decode(ub)
 	return ub, err
 }
