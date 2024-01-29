@@ -8,7 +8,7 @@ import (
 )
 
 type UserBasic struct {
-	Identity  string `bson:"identity"`
+	Identity  string `bson:"_id"`
 	Account   string `bson:"account"`
 	Password  string `bson:"password"`
 	Nickname  string `bson:"nickname"`
@@ -27,6 +27,7 @@ func (ub UserBasic) CollectionName() string {
 // GetUserBasicByAccountPassWord fetches a UserBasic from MongoDB using account and password.
 // It returns the found UserBasic and nil if successful, or nil and an error if not.
 func GetUserBasicByAccountPassWord(account, password string) (*UserBasic, error) {
+
 	ub := new(UserBasic)
 
 	err := Mongo.Collection(UserBasic{}.CollectionName()).
@@ -42,15 +43,22 @@ func GetUserBasicByAccountPassWord(account, password string) (*UserBasic, error)
 	return ub, err
 }
 
+// GetUserBasicByIdentity retrieves the basic user information based on the unique user identifier.
+// It returns the basic user information and nil error if the user is found; otherwise, it returns nil and an error.
 func GetUserBasicByIdentity(identity primitive.ObjectID) (*UserBasic, error) {
+
 	ub := new(UserBasic)
 
 	err := Mongo.Collection(UserBasic{}.CollectionName()).
-		FindOne(context.Background(), bson.D{
-			{
-				Key: "_id", Value: identity,
-			},
-		}).
+		FindOne(context.Background(), bson.D{{Key: "_id", Value: identity}}).
 		Decode(ub)
 	return ub, err
+}
+
+// GetUserBasicCountByEmail returns the count of users with the specified email.
+// It returns the count and nil error if the operation is successful; otherwise, it returns 0 and an error.
+func GetUserBasicCountByEmail(email string) (int64, error) {
+
+	return Mongo.Collection(UserBasic{}.CollectionName()).
+		CountDocuments(context.Background(), bson.D{{Key: "email", Value: email}})
 }

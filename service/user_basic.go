@@ -36,8 +36,9 @@ func Login(c *gin.Context) {
 	token, err := utils.GenerateToken(ub.Identity, ub.Email)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
-			"code": -1,
-			"msg":  "系统错误: " + err.Error(),
+			"code":         -1,
+			"msg":          "系统错误: " + err.Error(),
+			"[identity]: ": ub.Identity,
 		})
 		return
 	}
@@ -67,5 +68,40 @@ func UserDetail(c *gin.Context) {
 		"code": 200,
 		"msg":  "数据加载成功",
 		"data": userBasic,
+	})
+}
+
+func SendCode(c *gin.Context) {
+	email := c.PostForm("email")
+	if email == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "邮箱不能为空",
+		})
+		return
+	}
+	cnt, err := models.GetUserBasicCountByEmail(email)
+	if err != nil {
+		log.Printf("[DB ERROR]: %v\n", err)
+		return
+	}
+	if cnt > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "当前邮箱已被注册",
+		})
+	}
+	err = utils.SendCode(email, "88888888")
+	if err != nil {
+		log.Printf("[ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "系统错误",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "验证码发送成功",
 	})
 }

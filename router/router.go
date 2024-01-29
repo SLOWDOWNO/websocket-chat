@@ -10,7 +10,7 @@ import (
 func Router() *gin.Engine {
 	r := gin.Default()
 	r.POST("/login", service.Login)
-
+	r.POST("/send/code", service.SendCode)
 	auto := r.Group("/u", middlewares.AutoCheck())
 	auto.GET("/user/detail", service.UserDetail)
 	return r

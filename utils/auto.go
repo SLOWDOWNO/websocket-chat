@@ -9,9 +9,9 @@ import (
 )
 
 type UserClaims struct {
-	// Identity string `json:"identity"`
 	Identity primitive.ObjectID `json:"identity"`
-	Email    string             `json:"email"`
+	// Identity string `json:"identity"`
+	Email string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -23,6 +23,7 @@ var myKey = []byte("websocket-chat")
 
 // GenerateToken
 func GenerateToken(identity, email string) (string, error) {
+
 	objectID, err := primitive.ObjectIDFromHex(identity)
 	if err != nil {
 		return "", err
