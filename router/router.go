@@ -13,5 +13,7 @@ func Router() *gin.Engine {
 	r.POST("/send/code", service.SendCode)
 	auto := r.Group("/u", middlewares.AutoCheck())
 	auto.GET("/user/detail", service.UserDetail)
+	auto.GET("/websocket/message", service.WebsocketMessage)
+	auto.GET("/chat/list", service.ChatList)
 	return r
 }

@@ -5,13 +5,12 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v4"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserClaims struct {
-	Identity primitive.ObjectID `json:"identity"`
-	// Identity string `json:"identity"`
-	Email string `json:"email"`
+	// Identity primitive.ObjectID `json:"identity"`
+	Identity string `json:"identity"`
+	Email    string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -24,12 +23,12 @@ var myKey = []byte("websocket-chat")
 // GenerateToken
 func GenerateToken(identity, email string) (string, error) {
 
-	objectID, err := primitive.ObjectIDFromHex(identity)
-	if err != nil {
-		return "", err
-	}
+	// objectID, err := primitive.ObjectIDFromHex(identity)
+	// if err != nil {
+	// 	return "", err
+	// }
 	UserClaim := &UserClaims{
-		Identity:         objectID,
+		Identity:         identity,
 		Email:            email,
 		RegisteredClaims: jwt.RegisteredClaims{},
 	}
