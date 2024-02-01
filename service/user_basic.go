@@ -74,6 +74,10 @@ func UserDetail(c *gin.Context) {
 	})
 }
 
+// Check if the input is empty.
+// Check if the user has registered.
+// Generate and send the verification code.
+// Store the verification code in Redis, which is valid for 5 minutes.
 func SendCode(c *gin.Context) {
 	email := c.PostForm("email")
 	if email == "" {
@@ -201,5 +205,139 @@ func Register(c *gin.Context) {
 		"data": gin.H{
 			"token": token,
 		},
+	})
+}
+
+type UserQueryResult struct {
+	NickName string `json:"nickname"`
+	Sex      int    `json:"sex"`
+	Email    string `json:"email"`
+	Avatar   string `json:"avatar"`
+	IsFriend bool   `json:"is_friend"`
+}
+
+func UserQuery(c *gin.Context) {
+
+	account := c.Query("account")
+	if account == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "参数不正确",
+		})
+		return
+	}
+
+	ub, err := models.GetUserBasicByAccount(account)
+	if err != nil {
+		log.Printf("[DB ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据查询异常",
+		})
+		return
+	}
+
+	uc := c.MustGet("user_claims").(*utils.UserClaims)
+	data := UserQueryResult{
+		NickName: ub.Nickname,
+		Sex:      ub.Sex,
+		Email:    ub.Email,
+		Avatar:   ub.Avatar,
+		IsFriend: false,
+	}
+	if models.JudgeUserIsFriend(ub.Identity, uc.Identity) {
+		data.IsFriend = true
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "数据查询成功",
+		"data": data,
+	})
+}
+
+func UserAdd(c *gin.Context) {
+
+	account := c.PostForm("account")
+	if account == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "参数不正确",
+		})
+		return
+	}
+
+	// 查询用户数据
+	ub, err := models.GetUserBasicByAccount(account)
+	if err != nil {
+		log.Printf("[DB ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据查询异常",
+		})
+		return
+	}
+
+	// 检查是否已是好友
+	uc := c.MustGet("user_claims").(*utils.UserClaims)
+	if models.JudgeUserIsFriend(ub.Identity, uc.Identity) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "互为好友, 不可重复添加",
+		})
+		return
+	}
+
+	// 保存房间记录 ~
+	rb := &models.RoomBasic{
+		Identity:    utils.GetUUID(),
+		UserIdenity: uc.Identity,
+		CreateAt:    time.Now().Unix(),
+		UpdateAt:    time.Now().Unix(),
+	}
+	if err = models.InsertOneRoomBasic(rb); err != nil {
+		log.Printf("[DB ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据异常",
+		})
+		return
+	}
+
+	// 保存用户与房间的关联记录 ~
+	ur := &models.UserRoom{
+		UserIdenity:  uc.Identity,
+		RoomIdentity: rb.Identity,
+		RoomType:     1,
+		CreateAt:     time.Now().Unix(),
+		UpdateAt:     time.Now().Unix(),
+	}
+	if err = models.InsertOneUserRoom(ur); err != nil {
+		log.Printf("[DB ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据库异常",
+		})
+		return
+	}
+
+	ur = &models.UserRoom{
+		UserIdenity:  ub.Identity,
+		RoomIdentity: rb.Identity,
+		RoomType:     1,
+		CreateAt:     time.Now().Unix(),
+		UpdateAt:     time.Now().Unix(),
+	}
+	if err = models.InsertOneUserRoom(ur); err != nil {
+		log.Printf("[DB ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据库异常",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "添加成功",
 	})
 }

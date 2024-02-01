@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -9,6 +10,7 @@ import (
 type UserRoom struct {
 	UserIdenity  string `bson:"user_identity"`
 	RoomIdentity string `bson:"room_identity"`
+	RoomType     int    `bson:"room_type"` // 1: Individual chat 2: group chat
 	CreateAt     int64  `bson:"create_at"`
 	UpdateAt     int64  `bson:"update_at"`
 }
@@ -49,4 +51,42 @@ func GetUserRoomByRoomIdentity(roomIdentity string) ([]*UserRoom, error) {
 		urs = append(urs, ur)
 	}
 	return urs, nil
+}
+
+// 通过查询两个用户共享的单聊房间来判断他们是否为好友
+func JudgeUserIsFriend(userIdentity1, userIdentity2 string) bool {
+	// 查询 userIdentity1 单聊房间列表
+	cursor, err := Mongo.Collection(UserRoom{}.CollectionName()).
+		Find(context.Background(), bson.D{{Key: "user_identity", Value: userIdentity1}, {Key: "room_type", Value: 1}})
+	roomIdentities := make([]string, 0)
+	if err != nil {
+		log.Printf("[DB ERROR]:%v\n", err)
+		return false
+	}
+	for cursor.Next(context.Background()) {
+		ur := new(UserRoom)
+		err := cursor.Decode(ur)
+		if err != nil {
+			log.Printf("Decode Error:%v\n", err)
+			return false
+		}
+		roomIdentities = append(roomIdentities, ur.RoomIdentity)
+	}
+	// 获取关联 userIdentity2 单聊房间个数
+	cnt, err := Mongo.Collection(UserRoom{}.CollectionName()).
+		CountDocuments(context.Background(), bson.M{"user_identity": userIdentity2, "room_type": 1, "room_identity": bson.M{"$in": roomIdentities}})
+	if err != nil {
+		log.Printf("[DB ERROR]:%v\n", err)
+		return false
+	}
+	if cnt > 0 {
+		return true
+	}
+
+	return false
+}
+
+func InsertOneUserRoom(ur *UserRoom) error {
+	_, err := Mongo.Collection(UserRoom{}.CollectionName()).InsertOne(context.Background(), ur)
+	return err
 }

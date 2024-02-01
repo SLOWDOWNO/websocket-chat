@@ -54,6 +54,16 @@ func GetUserBasicByIdentity(identity string) (*UserBasic, error) {
 	return ub, err
 }
 
+func GetUserBasicByAccount(account string) (*UserBasic, error) {
+
+	ub := new(UserBasic)
+
+	err := Mongo.Collection(UserBasic{}.CollectionName()).
+		FindOne(context.Background(), bson.D{{Key: "account", Value: account}}).
+		Decode(ub)
+	return ub, err
+}
+
 // GetUserBasicCountByEmail returns the count of users with the specified email.
 // It returns the count and nil error if the operation is successful; otherwise, it returns 0 and an error.
 func GetUserBasicCountByEmail(email string) (int64, error) {
