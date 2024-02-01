@@ -61,3 +61,15 @@ func GetUserBasicCountByEmail(email string) (int64, error) {
 	return Mongo.Collection(UserBasic{}.CollectionName()).
 		CountDocuments(context.Background(), bson.D{{Key: "email", Value: email}})
 }
+
+func GetUserBasicCountByAccount(account string) (int64, error) {
+
+	return Mongo.Collection(UserBasic{}.CollectionName()).
+		CountDocuments(context.Background(), bson.D{{Key: "account", Value: account}})
+}
+
+func InsertOneUserBasic(ub *UserBasic) error {
+	_, err := Mongo.Collection(UserBasic{}.CollectionName()).
+		InsertOne(context.Background(), ub)
+	return err
+}

@@ -2,11 +2,13 @@ package utils
 
 import (
 	"crypto/tls"
+	"log"
 	"math/rand"
 	"net/smtp"
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jordan-wright/email"
 )
 
@@ -37,6 +39,7 @@ func SendCode(toUserEmail, code string) error {
 
 }
 
+// GetCode
 func GetCode() string {
 	code := ""
 	for i := 0; i < 6; i++ {
@@ -44,4 +47,14 @@ func GetCode() string {
 	}
 
 	return code
+}
+
+// Get UUID
+func GetUUID() string {
+	u, err := uuid.NewUUID()
+	if err != nil {
+		log.Printf("Failed to generate UUID: %v", err)
+		return ""
+	}
+	return u.String()
 }

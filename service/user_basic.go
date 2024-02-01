@@ -93,6 +93,7 @@ func SendCode(c *gin.Context) {
 			"code": -1,
 			"msg":  "当前邮箱已被注册",
 		})
+		return
 	}
 	code := utils.GetCode()
 	err = utils.SendCode(email, code)
@@ -114,5 +115,91 @@ func SendCode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "验证码发送成功",
+	})
+}
+
+func Register(c *gin.Context) {
+
+	account := c.PostForm("account")
+	password := c.PostForm("password")
+	email := c.PostForm("email")
+	code := c.PostForm("code")
+	if code == "" || email == "" || account == "" || password == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "参数不正确",
+		})
+		return
+	}
+
+	// 判断账号是否唯一
+	cnt, err := models.GetUserBasicCountByAccount(account)
+	if err != nil {
+		log.Printf("[DB ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "系统错误",
+		})
+		return
+	}
+	if cnt > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "账号已被注册",
+		})
+		return
+	}
+
+	// 验证码是否正确
+	r, err := models.RDB.Get(context.Background(), entities.RegisterPrefix+email).Result()
+	if err != nil {
+		log.Printf("[ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "验证码不正确",
+		})
+		return
+	}
+	if r != code {
+		log.Printf("[ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "验证码不正确",
+		})
+		return
+	}
+
+	ub := &models.UserBasic{
+		Identity:  utils.GetUUID(),
+		Account:   account,
+		Password:  utils.GetMd5(password),
+		Email:     email,
+		CreatedAt: time.Now().Unix(),
+		UpdatedAt: time.Now().Unix(),
+	}
+	err = models.InsertOneUserBasic(ub)
+	if err != nil {
+		log.Printf("[ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "系统错误",
+		})
+		return
+	}
+	token, err := utils.GenerateToken(ub.Identity, ub.Email)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code":         -1,
+			"msg":          "系统错误: " + err.Error(),
+			"[identity]: ": ub.Identity,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "登录成功",
+		"data": gin.H{
+			"token": token,
+		},
 	})
 }
