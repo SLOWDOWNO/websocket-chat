@@ -341,3 +341,45 @@ func UserAdd(c *gin.Context) {
 		"msg":  "添加成功",
 	})
 }
+
+func UserDelete(c *gin.Context) {
+
+	identity := c.Query("identity")
+	if identity == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "参数不正确",
+		})
+		return
+	}
+
+	uc := c.MustGet("user_claims").(*utils.UserClaims)
+	// 获取房间identity
+	roomIdentity := models.GetUserRoomIdentity(identity, uc.Identity)
+	if roomIdentity == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "非好友关系",
+		})
+	}
+
+	// 删除user_room关联
+	if err := models.DeleteUserRoom(roomIdentity); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "系统异常",
+		})
+	}
+	// 删除room_basic
+	if err := models.DeleteRoomBasic(roomIdentity); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "系统异常",
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "删除成功",
+	})
+}

@@ -90,3 +90,44 @@ func InsertOneUserRoom(ur *UserRoom) error {
 	_, err := Mongo.Collection(UserRoom{}.CollectionName()).InsertOne(context.Background(), ur)
 	return err
 }
+
+func GetUserRoomIdentity(userIdentity1, userIdentity2 string) string {
+	// 查询 userIdentity1 单聊房间列表
+	cursor, err := Mongo.Collection(UserRoom{}.CollectionName()).
+		Find(context.Background(), bson.D{{Key: "user_identity", Value: userIdentity1}, {Key: "room_type", Value: 1}})
+	roomIdentities := make([]string, 0)
+	if err != nil {
+		log.Printf("[DB ERROR]:%v\n", err)
+		return ""
+	}
+	for cursor.Next(context.Background()) {
+		ur := new(UserRoom)
+		err := cursor.Decode(ur)
+		if err != nil {
+			log.Printf("Decode Error:%v\n", err)
+			return ""
+		}
+		roomIdentities = append(roomIdentities, ur.RoomIdentity)
+	}
+	// 获取关联 userIdentity2 单聊房间个数
+	ur := new(UserRoom)
+	err = Mongo.Collection(UserRoom{}.CollectionName()).
+		FindOne(context.Background(), bson.M{"user_identity": userIdentity2, "room_type": 1, "room_identity": bson.M{"$in": roomIdentities}}).Decode(ur)
+	if err != nil {
+		log.Printf("[DB ERROR]:%v\n", err)
+		return ""
+	}
+
+	return ur.RoomIdentity
+}
+
+// 删除用户关联关系
+func DeleteUserRoom(roomIdentity string) error {
+
+	_, err := Mongo.Collection(UserRoom{}.CollectionName()).DeleteOne(context.Background(), bson.M{"room_identity": roomIdentity})
+	if err != nil {
+		log.Printf("[DB ERROR:] %v\n", err)
+		return err
+	}
+	return nil
+}

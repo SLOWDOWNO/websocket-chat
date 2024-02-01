@@ -18,5 +18,6 @@ func Router() *gin.Engine {
 	auto.GET("/websocket/message", service.WebsocketMessage)
 	auto.GET("/chat/list", service.ChatList)
 	auto.POST("/user/add", service.UserAdd)
+	auto.DELETE("/user/delete", service.UserDelete)
 	return r
 }
