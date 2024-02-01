@@ -2,10 +2,19 @@ package utils
 
 import (
 	"crypto/tls"
+	"math/rand"
 	"net/smtp"
+	"strconv"
+	"time"
 
 	"github.com/jordan-wright/email"
 )
+
+var r *rand.Rand
+
+func init() {
+	r = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
 
 // SendCode sends a verification code to the specified user email address.
 // It uses the provided email account credentials to send the email.
@@ -26,4 +35,13 @@ func SendCode(toUserEmail, code string) error {
 	return e.SendWithTLS(addr, smtp.PlainAuth("", mailUserName, mailPassword, host),
 		&tls.Config{InsecureSkipVerify: true, ServerName: "smtp.qq.com"})
 
+}
+
+func GetCode() string {
+	code := ""
+	for i := 0; i < 6; i++ {
+		code += strconv.Itoa(r.Intn(10))
+	}
+
+	return code
 }

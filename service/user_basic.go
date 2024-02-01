@@ -1,8 +1,11 @@
 package service
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"time"
+	"websocket-chat/entities"
 	"websocket-chat/models"
 	"websocket-chat/utils"
 
@@ -91,7 +94,8 @@ func SendCode(c *gin.Context) {
 			"msg":  "当前邮箱已被注册",
 		})
 	}
-	err = utils.SendCode(email, "88888888")
+	code := utils.GetCode()
+	err = utils.SendCode(email, code)
 	if err != nil {
 		log.Printf("[ERROR]: %v\n", err)
 		c.JSON(http.StatusOK, gin.H{
@@ -99,6 +103,13 @@ func SendCode(c *gin.Context) {
 			"msg":  "系统错误",
 		})
 		return
+	}
+	if err = models.RDB.Set(context.Background(), entities.RegisterPrefix+email, code, time.Second*time.Duration(entities.ExpireTime)).Err(); err != nil {
+		log.Printf("[ERROR]: %v\n", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "系统错误",
+		})
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,

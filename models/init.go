@@ -5,11 +5,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var Mongo = InitMongo()
+var RDB = InitRedis()
 
 func InitMongo() *mongo.Database {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -23,4 +25,10 @@ func InitMongo() *mongo.Database {
 	}
 	return client.Database("im")
 
+}
+
+func InitRedis() *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
 }
