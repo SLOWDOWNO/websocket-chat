@@ -73,3 +73,18 @@ func Register(account, password, email, code string) error {
 
 	return nil
 }
+
+// 登录服务
+func Login(account, password string) (string, error) {
+	ub, err := models.GetUserBasicByAccountPassWord(account, utils.GetMd5(password))
+	if err != nil {
+		return "", errors.New("用户名或密码错误")
+	}
+
+	token, err := utils.GenerateToken(ub.Identity, ub.Email)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}

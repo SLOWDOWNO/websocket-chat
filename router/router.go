@@ -13,7 +13,7 @@ func Router() *gin.Engine {
 	router := gin.Default()
 
 	router.POST("/register", handlers.RegisterHandler)
-	router.POST("/login", service.Login)
+	router.POST("/login", handlers.LoginHandler)
 	router.POST("/send/code", handlers.SendVerificationCodeHandler)
 	auto := router.Group("/u", middlewares.AutoCheck())
 	auto.GET("/user/query", service.UserQuery)
