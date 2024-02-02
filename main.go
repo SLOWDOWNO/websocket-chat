@@ -5,6 +5,9 @@ import (
 )
 
 func main() {
-	e := router.Router()
-	e.Run(":8080")
+	engine := router.Router()
+	err := engine.Run(":8080")
+	if err != nil {
+		panic(err)
+	}
 }

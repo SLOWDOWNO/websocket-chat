@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 	"time"
-	"websocket-chat/models"
+	"websocket-chat/pkg/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

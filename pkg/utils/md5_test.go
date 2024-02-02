@@ -3,7 +3,7 @@ package utils_test
 import (
 	"fmt"
 	"testing"
-	"websocket-chat/utils"
+	"websocket-chat/pkg/utils"
 )
 
 func TestMd5(t *testing.T) {

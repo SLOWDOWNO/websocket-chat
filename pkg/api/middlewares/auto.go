@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"net/http"
-	"websocket-chat/utils"
+	"websocket-chat/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )

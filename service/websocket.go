@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 	"websocket-chat/entities"
-	"websocket-chat/models"
-	"websocket-chat/utils"
+	"websocket-chat/pkg/models"
+	"websocket-chat/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
