@@ -216,6 +216,7 @@ type UserQueryResult struct {
 	IsFriend bool   `json:"is_friend"`
 }
 
+// 用户查询
 func UserQuery(c *gin.Context) {
 
 	account := c.Query("account")

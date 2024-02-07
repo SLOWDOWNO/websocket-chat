@@ -3,7 +3,6 @@ package router
 import (
 	"websocket-chat/pkg/api/handlers"
 	"websocket-chat/pkg/api/middlewares"
-	"websocket-chat/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,12 +15,13 @@ func Router() *gin.Engine {
 	router.POST("/login", handlers.LoginHandler)
 	router.POST("/send/code", handlers.SendVerificationCodeHandler)
 	auto := router.Group("/u", middlewares.AutoCheck())
-	auto.GET("/user/query", service.UserQuery)
-	auto.GET("/user/detail", service.UserDetail)
-	auto.GET("/websocket/message", service.WebsocketMessage)
-	auto.GET("/chat/list", service.ChatList)
-	auto.POST("/user/add", service.UserAdd)
-	auto.DELETE("/user/delete", service.UserDelete)
+	auto.GET("/user/query", handlers.UserQueryHandler)
+	auto.GET("/user/detail", handlers.UserDetailHandler)
+	// BUG 2024/02/07 15:09:57 ReadJSON Error: websocket: close 1000 (normal)
+	auto.GET("/websocket/message", handlers.WebsocketMessage)
+	auto.GET("/chat/list", handlers.ChatList)
+	auto.POST("/user/add", handlers.UserAddHandler)
+	auto.DELETE("/user/delete", handlers.UserDeleteHandler)
 
 	return router
 }

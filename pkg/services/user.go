@@ -6,6 +6,7 @@ import (
 	"time"
 	"websocket-chat/entities"
 	"websocket-chat/pkg/models"
+	"websocket-chat/pkg/repository"
 	"websocket-chat/pkg/utils"
 )
 
@@ -87,4 +88,94 @@ func Login(account, password string) (string, error) {
 	}
 
 	return token, nil
+}
+
+// 用户信息查询服务
+func UserDetail(identity string) (*models.UserBasic, error) {
+	ub, err := models.GetUserBasicByIdentity(identity)
+	if err != nil {
+		return nil, err
+	}
+	return ub, nil
+}
+
+// 用户查询服务
+func UserQuery(account string, uc *utils.UserClaims) (repository.UserQueryResult, error) {
+	ub, err := models.GetUserBasicByAccount(account)
+	if err != nil {
+		return repository.UserQueryResult{}, err
+	}
+
+	data := repository.UserQueryResult{
+		NickName: ub.Nickname,
+		Sex:      ub.Sex,
+		Email:    ub.Email,
+		Avatar:   ub.Avatar,
+		IsFriend: models.JudgeUserIsFriend(ub.Identity, uc.Identity),
+	}
+
+	return data, nil
+}
+
+// 添加好友服务
+func AddUser(uc *utils.UserClaims, account string) error {
+	ub, err := models.GetUserBasicByAccount(account)
+	if err != nil {
+		return err
+	}
+
+	if models.JudgeUserIsFriend(ub.Identity, uc.Identity) {
+		return errors.New("互为好友, 不可重复添加")
+	}
+
+	rb := &models.RoomBasic{
+		Identity:    utils.GetUUID(),
+		UserIdenity: uc.Identity,
+		CreateAt:    time.Now().Unix(),
+		UpdateAt:    time.Now().Unix(),
+	}
+	if err = models.InsertOneRoomBasic(rb); err != nil {
+		return err
+	}
+
+	ur := &models.UserRoom{
+		UserIdenity:  uc.Identity,
+		RoomIdentity: rb.Identity,
+		RoomType:     1,
+		CreateAt:     time.Now().Unix(),
+		UpdateAt:     time.Now().Unix(),
+	}
+	if err = models.InsertOneUserRoom(ur); err != nil {
+		return err
+	}
+
+	ur = &models.UserRoom{
+		UserIdenity:  ub.Identity,
+		RoomIdentity: rb.Identity,
+		RoomType:     1,
+		CreateAt:     time.Now().Unix(),
+		UpdateAt:     time.Now().Unix(),
+	}
+	if err = models.InsertOneUserRoom(ur); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteUser(uc *utils.UserClaims, identity string) error {
+	roomIdentity := models.GetUserRoomIdentity(identity, uc.Identity)
+	if roomIdentity == "" {
+		return errors.New("非好友关系")
+	}
+
+	if err := models.DeleteUserRoom(roomIdentity); err != nil {
+		return err
+	}
+
+	if err := models.DeleteRoomBasic(roomIdentity); err != nil {
+		return err
+	}
+
+	return nil
 }
